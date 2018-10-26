@@ -449,7 +449,7 @@ static int create_graft(int argc, const char **argv, int force, int gentle)
 
 	buffer = get_commit_buffer(commit, &size);
 	strbuf_add(&buf, buffer, size);
-	unuse_commit_buffer(commit, buffer);
+	repo_unuse_commit_buffer(the_repository, commit, buffer);
 
 	if (replace_parents(&buf, argc - 1, &argv[1]) < 0) {
 		strbuf_release(&buf);

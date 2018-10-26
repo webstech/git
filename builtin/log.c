@@ -528,7 +528,7 @@ static int show_tag_object(const struct object_id *oid, struct rev_info *rev)
 {
 	unsigned long size;
 	enum object_type type;
-	char *buf = read_object_file(oid, &type, &size);
+	char *buf = repo_read_object_file(the_repository, oid, &type, &size);
 	int offset = 0;
 
 	if (!buf)
@@ -1054,7 +1054,7 @@ static void make_cover_letter(struct rev_info *rev, int use_stdout,
 		const char *buf = get_commit_buffer(list[i], NULL);
 		if (has_non_ascii(buf))
 			need_8bit_cte = 1;
-		unuse_commit_buffer(list[i], buf);
+		repo_unuse_commit_buffer(the_repository, list[i], buf);
 	}
 
 	if (!branch_name)

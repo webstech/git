@@ -666,7 +666,7 @@ static int rebase_config(const char *var, const char *value, void *data)
 static int is_linear_history(struct commit *from, struct commit *to)
 {
 	while (to && to != from) {
-		parse_commit(to);
+		repo_parse_commit(the_repository, to);
 		if (!to->parents)
 			return 1;
 		if (to->parents->next)

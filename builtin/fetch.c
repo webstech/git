@@ -1005,7 +1005,7 @@ static int check_exist_and_connected(struct ref *ref_map)
 	 * we need all direct targets to exist.
 	 */
 	for (r = rm; r; r = r->next) {
-		if (!has_object_file(&r->old_oid))
+		if (!repo_has_object_file(the_repository, &r->old_oid))
 			return -1;
 	}
 

@@ -47,7 +47,7 @@ static int verify_commit(const char *name, unsigned flags)
 	if (get_oid(name, &oid))
 		return error("commit '%s' not found.", name);
 
-	buf = read_object_file(&oid, &type, &size);
+	buf = repo_read_object_file(the_repository, &oid, &type, &size);
 	if (!buf)
 		return error("%s: unable to read file.", name);
 	if (type != OBJ_COMMIT)

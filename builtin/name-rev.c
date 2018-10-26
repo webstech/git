@@ -87,7 +87,7 @@ static void name_rev(struct commit *commit,
 	int parent_number = 1;
 	char *to_free = NULL;
 
-	parse_commit(commit);
+	repo_parse_commit(the_repository, commit);
 
 	if (commit->date < cutoff)
 		return;

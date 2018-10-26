@@ -72,7 +72,7 @@ struct commit *lookup_commit_reference_by_name(const char *name)
 	if (get_oid_committish(name, &oid))
 		return NULL;
 	commit = lookup_commit_reference(the_repository, &oid);
-	if (parse_commit(commit))
+	if (repo_parse_commit(the_repository, commit))
 		return NULL;
 	return commit;
 }
@@ -493,7 +493,7 @@ int repo_parse_commit_gently(struct repository *r,
 
 void parse_commit_or_die(struct commit *item)
 {
-	if (parse_commit(item))
+	if (repo_parse_commit(the_repository, item))
 		die("unable to parse commit %s",
 		    item ? oid_to_hex(&item->object.oid) : "(null)");
 }
@@ -598,7 +598,7 @@ struct commit *pop_most_recent_commit(struct commit_list **list,
 
 	while (parents) {
 		struct commit *commit = parents->item;
-		if (!parse_commit(commit) && !(commit->object.flags & mark)) {
+		if (!repo_parse_commit(the_repository, commit) && !(commit->object.flags & mark)) {
 			commit->object.flags |= mark;
 			commit_list_insert_by_date(commit, list);
 		}
@@ -690,7 +690,7 @@ void record_author_date(struct author_date_slab *author_date,
 	*(author_date_slab_at(author_date, commit)) = date;
 
 fail_exit:
-	unuse_commit_buffer(commit, buffer);
+	repo_unuse_commit_buffer(the_repository, commit, buffer);
 }
 
 int compare_commits_by_author_date(const void *a_, const void *b_,
@@ -869,7 +869,7 @@ static void add_one_commit(struct object_id *oid, struct rev_collect *revs)
 	commit = lookup_commit(the_repository, oid);
 	if (!commit ||
 	    (commit->object.flags & TMP_MARK) ||
-	    parse_commit(commit))
+	    repo_parse_commit(the_repository, commit))
 		return;
 
 	ALLOC_GROW(revs->commit, revs->nr + 1, revs->alloc);
@@ -1009,7 +1009,7 @@ int parse_signed_commit(const struct commit *commit,
 		}
 		line = next;
 	}
-	unuse_commit_buffer(commit, buffer);
+	repo_unuse_commit_buffer(the_repository, commit, buffer);
 	return saw_signature;
 }
 
@@ -1058,7 +1058,8 @@ static void handle_signed_tag(struct commit *parent, struct commit_extra_header 
 	desc = merge_remote_util(parent);
 	if (!desc || !desc->obj)
 		return;
-	buf = read_object_file(&desc->obj->oid, &type, &size);
+	buf = repo_read_object_file(the_repository, &desc->obj->oid, &type,
+				    &size);
 	if (!buf || type != OBJ_TAG)
 		goto free_return;
 	len = parse_signature(buf, size);
@@ -1136,7 +1137,7 @@ struct commit_extra_header *read_commit_extra_headers(struct commit *commit,
 	unsigned long size;
 	const char *buffer = get_commit_buffer(commit, &size);
 	extra = read_commit_extra_header_lines(buffer, size, exclude);
-	unuse_commit_buffer(commit, buffer);
+	repo_unuse_commit_buffer(the_repository, commit, buffer);
 	return extra;
 }
 

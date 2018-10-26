@@ -1454,7 +1454,7 @@ int pretend_object_file(void *buf, unsigned long len, enum object_type type,
 	struct cached_object *co;
 
 	hash_object_file(buf, len, type_name(type), oid);
-	if (has_sha1_file(oid->hash) || find_cached_object(oid))
+	if (repo_has_sha1_file(the_repository, oid->hash) || find_cached_object(oid))
 		return 0;
 	ALLOC_GROW(cached_objects, cached_object_nr + 1, cached_object_alloc);
 	co = &cached_objects[cached_object_nr++];
@@ -1524,7 +1524,8 @@ void *read_object_with_reference(const struct object_id *oid,
 		int ref_length = -1;
 		const char *ref_type = NULL;
 
-		buffer = read_object_file(&actual_oid, &type, &isize);
+		buffer = repo_read_object_file(the_repository, &actual_oid,
+					       &type, &isize);
 		if (!buffer)
 			return NULL;
 		if (type == required_type) {

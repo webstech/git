@@ -430,7 +430,7 @@ static int check_updates(struct unpack_trees_options *o)
 			struct cache_entry *ce = index->cache[i];
 			if ((ce->ce_flags & CE_UPDATE) &&
 			    !S_ISGITLINK(ce->ce_mode)) {
-				if (!has_object_file(&ce->oid))
+				if (!repo_has_object_file(the_repository, &ce->oid))
 					oid_array_append(&to_fetch, &ce->oid);
 			}
 		}

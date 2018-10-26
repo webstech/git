@@ -482,7 +482,7 @@ static void write_graph_chunk_data(struct hashfile *f, int hash_len,
 		int edge_value;
 		uint32_t packedDate[2];
 
-		parse_commit(*list);
+		repo_parse_commit(the_repository, *list);
 		hashwrite(f, get_commit_tree_oid(*list)->hash, hash_len);
 
 		parent = (*list)->parents;
@@ -665,7 +665,7 @@ static void close_reachable(struct packed_oid_list *oids, int report_progress)
 		display_progress(progress, ++j);
 		commit = lookup_commit(the_repository, &oids->list[i]);
 
-		if (commit && !parse_commit(commit))
+		if (commit && !repo_parse_commit(the_repository, commit))
 			add_missing_parents(oids, commit);
 	}
 
@@ -879,7 +879,7 @@ void write_commit_graph(const char *obj_dir,
 			continue;
 
 		commits.list[commits.nr] = lookup_commit(the_repository, &oids.list[i]);
-		parse_commit(commits.list[commits.nr]);
+		repo_parse_commit(the_repository, commits.list[commits.nr]);
 
 		for (parent = commits.list[commits.nr]->parents;
 		     parent; parent = parent->next)
@@ -1056,7 +1056,7 @@ int verify_commit_graph(struct repository *r, struct commit_graph *g)
 
 		graph_commit = lookup_commit(r, &cur_oid);
 		odb_commit = (struct commit *)create_object(r, cur_oid.hash, alloc_commit_node(r));
-		if (parse_commit_internal(odb_commit, 0, 0)) {
+		if (repo_parse_commit_internal(the_repository, odb_commit, 0, 0)) {
 			graph_report("failed to parse %s from object database",
 				     oid_to_hex(&cur_oid));
 			continue;

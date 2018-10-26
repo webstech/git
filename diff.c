@@ -3961,7 +3961,8 @@ int diff_populate_filespec(struct repository *r,
 				return 0;
 			}
 		}
-		s->data = read_object_file(&s->oid, &type, &s->size);
+		s->data = repo_read_object_file(the_repository, &s->oid,
+						&type, &s->size);
 		if (!s->data)
 			die("unable to read %s", oid_to_hex(&s->oid));
 		s->should_free = 1;

@@ -265,7 +265,7 @@ static void record_person(int which, struct string_list *people,
 {
 	const char *buffer = get_commit_buffer(commit, NULL);
 	record_person_from_buf(which, people, buffer);
-	unuse_commit_buffer(commit, buffer);
+	repo_unuse_commit_buffer(the_repository, commit, buffer);
 }
 
 static int cmp_string_list_util_as_integral(const void *a_, const void *b_)
@@ -376,7 +376,8 @@ static void shortlog(const char *name,
 		if (subjects.nr > limit)
 			continue;
 
-		format_commit_message(commit, "%s", &sb, &ctx);
+		repo_format_commit_message(the_repository, commit, "%s", &sb,
+					   &ctx);
 		strbuf_ltrim(&sb);
 
 		if (!sb.len)
@@ -494,7 +495,8 @@ static void fmt_merge_msg_sigs(struct strbuf *out)
 		struct object_id *oid = origins.items[i].util;
 		enum object_type type;
 		unsigned long size, len;
-		char *buf = read_object_file(oid, &type, &size);
+		char *buf = repo_read_object_file(the_repository, oid, &type,
+						  &size);
 		struct strbuf sig = STRBUF_INIT;
 
 		if (!buf || type != OBJ_TAG)

@@ -352,7 +352,7 @@ static void free_message(struct commit *commit, struct commit_message *msg)
 	free(msg->parent_label);
 	free(msg->label);
 	free(msg->subject);
-	unuse_commit_buffer(commit, msg->message);
+	repo_unuse_commit_buffer(the_repository, commit, msg->message);
 }
 
 static void print_advice(int show_hint, struct replay_opts *opts)
@@ -612,7 +612,7 @@ static int is_index_unchanged(void)
 	 * the commit is invalid, parse_commit() will complain.  So
 	 * there is nothing for us to say here.  Just return failure.
 	 */
-	if (parse_commit(head_commit))
+	if (repo_parse_commit(the_repository, head_commit))
 		return -1;
 
 	if (!(cache_tree_oid = get_cache_tree_oid()))
@@ -1199,13 +1199,15 @@ void print_commit_summary(const char *prefix, const struct object_id *oid,
 	commit = lookup_commit(the_repository, oid);
 	if (!commit)
 		die(_("couldn't look up newly created commit"));
-	if (parse_commit(commit))
+	if (repo_parse_commit(the_repository, commit))
 		die(_("could not parse newly created commit"));
 
 	strbuf_addstr(&format, "format:%h] %s");
 
-	format_commit_message(commit, "%an <%ae>", &author_ident, &pctx);
-	format_commit_message(commit, "%cn <%ce>", &committer_ident, &pctx);
+	repo_format_commit_message(the_repository, commit, "%an <%ae>",
+				   &author_ident, &pctx);
+	repo_format_commit_message(the_repository, commit, "%cn <%ce>",
+				   &committer_ident, &pctx);
 	if (strbuf_cmp(&author_ident, &committer_ident)) {
 		strbuf_addstr(&format, "\n Author: ");
 		strbuf_addbuf_percentquote(&format, &author_ident);
@@ -1213,7 +1215,8 @@ void print_commit_summary(const char *prefix, const struct object_id *oid,
 	if (flags & SUMMARY_SHOW_AUTHOR_DATE) {
 		struct strbuf date = STRBUF_INIT;
 
-		format_commit_message(commit, "%ad", &date, &pctx);
+		repo_format_commit_message(the_repository, commit, "%ad",
+					   &date, &pctx);
 		strbuf_addstr(&format, "\n Date: ");
 		strbuf_addbuf_percentquote(&format, &date);
 		strbuf_release(&date);
@@ -1278,7 +1281,7 @@ static int parse_head(struct commit **head)
 			warning(_("HEAD %s is not a commit!"),
 				oid_to_hex(&oid));
 		}
-		if (parse_commit(current_head))
+		if (repo_parse_commit(the_repository, current_head))
 			return error(_("could not parse HEAD commit"));
 	}
 	*head = current_head;
@@ -1328,7 +1331,8 @@ static int try_to_commit(struct strbuf *msg, const char *author,
 			hook_commit = "HEAD";
 		}
 		author = amend_author = get_author(message);
-		unuse_commit_buffer(current_head, message);
+		repo_unuse_commit_buffer(the_repository, current_head,
+					 message);
 		if (!author) {
 			res = error(_("unable to parse commit author"));
 			goto out;
@@ -1438,12 +1442,12 @@ static int is_original_commit_empty(struct commit *commit)
 {
 	const struct object_id *ptree_oid;
 
-	if (parse_commit(commit))
+	if (repo_parse_commit(the_repository, commit))
 		return error(_("could not parse commit %s"),
 			     oid_to_hex(&commit->object.oid));
 	if (commit->parents) {
 		struct commit *parent = commit->parents->item;
-		if (parse_commit(parent))
+		if (repo_parse_commit(the_repository, parent))
 			return error(_("could not parse parent commit %s"),
 				oid_to_hex(&parent->object.oid));
 		ptree_oid = get_commit_tree_oid(parent);
@@ -1590,7 +1594,8 @@ static int update_squash_messages(enum todo_command command,
 		find_commit_subject(head_message, &body);
 		if (write_message(body, strlen(body),
 				  rebase_path_fixup_msg(), 0)) {
-			unuse_commit_buffer(head_commit, head_message);
+			repo_unuse_commit_buffer(the_repository, head_commit,
+						 head_message);
 			return error(_("cannot write '%s'"),
 				     rebase_path_fixup_msg());
 		}
@@ -1602,7 +1607,8 @@ static int update_squash_messages(enum todo_command command,
 		strbuf_addstr(&buf, "\n\n");
 		strbuf_addstr(&buf, body);
 
-		unuse_commit_buffer(head_commit, head_message);
+		repo_unuse_commit_buffer(the_repository, head_commit,
+					 head_message);
 	}
 
 	if (!(message = get_commit_buffer(commit, NULL)))
@@ -1625,7 +1631,7 @@ static int update_squash_messages(enum todo_command command,
 		strbuf_add_commented_lines(&buf, body, strlen(body));
 	} else
 		return error(_("unknown command: %d"), command);
-	unuse_commit_buffer(commit, message);
+	repo_unuse_commit_buffer(the_repository, commit, message);
 
 	res = write_message(buf.buf, buf.len, rebase_path_squash_msg(), 0);
 	strbuf_release(&buf);
@@ -1762,7 +1768,7 @@ static int do_pick_commit(enum todo_command command, struct commit *commit,
 		msg_file = NULL;
 		goto fast_forward_edit;
 	}
-	if (parent && parse_commit(parent) < 0)
+	if (parent && repo_parse_commit(the_repository, parent) < 0)
 		/* TRANSLATORS: The first %s will be a "todo" command like
 		   "revert" or "pick", the second %s a SHA1. */
 		return error(_("%s: cannot parse parent commit %s"),
@@ -2428,7 +2434,8 @@ static int walk_revs_populate_todo(struct todo_list *todo_list,
 		subject_len = find_commit_subject(commit_buffer, &subject);
 		strbuf_addf(&todo_list->buf, "%s %s %.*s\n", command_string,
 			short_commit_name(commit), subject_len, subject);
-		unuse_commit_buffer(commit, commit_buffer);
+		repo_unuse_commit_buffer(the_repository, commit,
+					 commit_buffer);
 	}
 
 	if (!todo_list->nr)
@@ -2687,7 +2694,8 @@ static int make_patch(struct commit *commit, struct replay_opts *opts)
 		const char *commit_buffer = get_commit_buffer(commit, NULL);
 		find_commit_subject(commit_buffer, &subject);
 		res |= write_message(subject, strlen(subject), buf.buf, 1);
-		unuse_commit_buffer(commit, commit_buffer);
+		repo_unuse_commit_buffer(the_repository, commit,
+					 commit_buffer);
 	}
 	strbuf_release(&buf);
 
@@ -3084,7 +3092,7 @@ static int do_merge(struct commit *commit, const char *arg, int arg_len,
 		find_commit_subject(message, &body);
 		len = strlen(body);
 		ret = write_message(body, len, git_path_merge_msg(the_repository), 0);
-		unuse_commit_buffer(commit, message);
+		repo_unuse_commit_buffer(the_repository, commit, message);
 		if (ret) {
 			error_errno(_("could not write '%s'"),
 				    git_path_merge_msg(the_repository));
@@ -3410,7 +3418,7 @@ static int stopped_at_head(void)
 
 	if (get_oid("HEAD", &head) ||
 	    !(commit = lookup_commit(the_repository, &head)) ||
-	    parse_commit(commit) || get_message(commit, &message))
+	    repo_parse_commit(the_repository, commit) || get_message(commit, &message))
 		fprintf(stderr, _("Stopped at HEAD\n"));
 	else {
 		fprintf(stderr, _("Stopped at %s\n"), message.label);
@@ -3810,11 +3818,13 @@ static int commit_staged_changes(struct replay_opts *opts,
 				if (parse_head(&commit) ||
 				    !(p = get_commit_buffer(commit, NULL)) ||
 				    write_message(p, strlen(p), path, 0)) {
-					unuse_commit_buffer(commit, p);
+					repo_unuse_commit_buffer(the_repository,
+								 commit, p);
 					return error(_("could not write file: "
 						       "'%s'"), path);
 				}
-				unuse_commit_buffer(commit, p);
+				repo_unuse_commit_buffer(the_repository,
+							 commit, p);
 			}
 		}
 
@@ -4312,7 +4322,7 @@ static int make_script_with_merges(struct pretty_print_context *pp,
 		if (entry)
 			strbuf_addf(out, "\n%c Branch %s\n", comment_line_char, entry->string);
 		else
-			strbuf_addf(out, "\n");
+			strbuf_addstr(out, "\n");
 
 		while (oidset_contains(&interesting, &commit->object.oid) &&
 		       !oidset_contains(&shown, &commit->object.oid)) {
@@ -4607,7 +4617,7 @@ static int skip_unnecessary_picks(struct todo_list *todo_list,
 			continue;
 		if (item->command != TODO_PICK)
 			break;
-		if (parse_commit(item->commit)) {
+		if (repo_parse_commit(the_repository, item->commit)) {
 			return error(_("could not parse commit '%s'"),
 				oid_to_hex(&item->commit->object.oid));
 		}
@@ -4795,12 +4805,13 @@ static int todo_list_rearrange_squash(struct todo_list *todo_list)
 
 		*commit_todo_item_at(&commit_todo, item->commit) = item;
 
-		parse_commit(item->commit);
+		repo_parse_commit(the_repository, item->commit);
 		commit_buffer = get_commit_buffer(item->commit, NULL);
 		find_commit_subject(commit_buffer, &subject);
 		format_subject(&buf, subject, " ");
 		subject = subjects[i] = strbuf_detach(&buf, &subject_len);
-		unuse_commit_buffer(item->commit, commit_buffer);
+		repo_unuse_commit_buffer(the_repository, item->commit,
+					 commit_buffer);
 		if ((skip_prefix(subject, "fixup! ", &p) ||
 		     skip_prefix(subject, "squash! ", &p))) {
 			struct commit *commit2;

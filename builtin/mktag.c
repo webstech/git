@@ -25,7 +25,8 @@ static int verify_object(const struct object_id *oid, const char *expected_type)
 	int ret = -1;
 	enum object_type type;
 	unsigned long size;
-	void *buffer = read_object_file(oid, &type, &size);
+	void *buffer = repo_read_object_file(the_repository, oid, &type,
+					     &size);
 	const struct object_id *repl = lookup_replace_object(the_repository, oid);
 
 	if (buffer) {

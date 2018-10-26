@@ -414,7 +414,7 @@ int ref_newer(const struct object_id *new_oid, const struct object_id *old_oid)
 		return 0;
 	new_commit = (struct commit *) o;
 
-	if (parse_commit(new_commit) < 0)
+	if (repo_parse_commit(the_repository, new_commit) < 0)
 		return 0;
 
 	commit_list_insert(old_commit, &old_commit_list);
@@ -585,7 +585,7 @@ int can_all_from_reach_with_flag(struct object_array *from,
 		}
 
 		list[nr_commits] = (struct commit *)from_one;
-		if (parse_commit(list[nr_commits]) ||
+		if (repo_parse_commit(the_repository, list[nr_commits]) ||
 		    list[nr_commits]->generation < min_generation) {
 			result = 0;
 			goto cleanup;
@@ -620,7 +620,7 @@ int can_all_from_reach_with_flag(struct object_array *from,
 				if (!(parent->item->object.flags & assign_flag)) {
 					parent->item->object.flags |= assign_flag;
 
-					if (parse_commit(parent->item) ||
+					if (repo_parse_commit(the_repository, parent->item) ||
 					    parent->item->date < min_commit_date ||
 					    parent->item->generation < min_generation)
 						continue;
@@ -662,7 +662,7 @@ int can_all_from_reach(struct commit_list *from, struct commit_list *to,
 	while (from_iter) {
 		add_object_array(&from_iter->item->object, NULL, &from_objs);
 
-		if (!parse_commit(from_iter->item)) {
+		if (!repo_parse_commit(the_repository, from_iter->item)) {
 			if (from_iter->item->date < min_commit_date)
 				min_commit_date = from_iter->item->date;
 
@@ -674,7 +674,7 @@ int can_all_from_reach(struct commit_list *from, struct commit_list *to,
 	}
 
 	while (to_iter) {
-		if (!parse_commit(to_iter->item)) {
+		if (!repo_parse_commit(the_repository, to_iter->item)) {
 			if (to_iter->item->date < min_commit_date)
 				min_commit_date = to_iter->item->date;
 

@@ -146,11 +146,13 @@ static void *get_delta(struct object_entry *entry)
 	void *buf, *base_buf, *delta_buf;
 	enum object_type type;
 
-	buf = read_object_file(&entry->idx.oid, &type, &size);
+	buf = repo_read_object_file(the_repository, &entry->idx.oid, &type,
+				    &size);
 	if (!buf)
 		die(_("unable to read %s"), oid_to_hex(&entry->idx.oid));
-	base_buf = read_object_file(&DELTA(entry)->idx.oid, &type,
-				    &base_size);
+	base_buf = repo_read_object_file(the_repository,
+					 &DELTA(entry)->idx.oid, &type,
+					 &base_size);
 	if (!base_buf)
 		die("unable to read %s",
 		    oid_to_hex(&DELTA(entry)->idx.oid));
@@ -300,7 +302,9 @@ static unsigned long write_no_reuse_object(struct hashfile *f, struct object_ent
 		    (st = open_istream(&entry->idx.oid, &type, &size, NULL)) != NULL)
 			buf = NULL;
 		else {
-			buf = read_object_file(&entry->idx.oid, &type, &size);
+			buf = repo_read_object_file(the_repository,
+						    &entry->idx.oid, &type,
+						    &size);
 			if (!buf)
 				die(_("unable to read %s"),
 				    oid_to_hex(&entry->idx.oid));
@@ -1263,7 +1267,7 @@ static struct pbase_tree_cache *pbase_tree_get(const struct object_id *oid)
 	/* Did not find one.  Either we got a bogus request or
 	 * we need to read and perhaps cache.
 	 */
-	data = read_object_file(oid, &type, &size);
+	data = repo_read_object_file(the_repository, oid, &type, &size);
 	if (!data)
 		return NULL;
 	if (type != OBJ_TREE) {
@@ -2090,7 +2094,9 @@ static int try_delta(struct unpacked *trg, struct unpacked *src,
 	/* Load data if not already done */
 	if (!trg->data) {
 		read_lock();
-		trg->data = read_object_file(&trg_entry->idx.oid, &type, &sz);
+		trg->data = repo_read_object_file(the_repository,
+						  &trg_entry->idx.oid, &type,
+						  &sz);
 		read_unlock();
 		if (!trg->data)
 			die(_("object %s cannot be read"),
@@ -2103,7 +2109,9 @@ static int try_delta(struct unpacked *trg, struct unpacked *src,
 	}
 	if (!src->data) {
 		read_lock();
-		src->data = read_object_file(&src_entry->idx.oid, &type, &sz);
+		src->data = repo_read_object_file(the_repository,
+						  &src_entry->idx.oid, &type,
+						  &sz);
 		read_unlock();
 		if (!src->data) {
 			if (src_entry->preferred_base) {
@@ -2827,7 +2835,7 @@ static void show_object__ma_allow_any(struct object *obj, const char *name, void
 	 * Quietly ignore ALL missing objects.  This avoids problems with
 	 * staging them now and getting an odd error later.
 	 */
-	if (!has_object_file(&obj->oid))
+	if (!repo_has_object_file(the_repository, &obj->oid))
 		return;
 
 	show_object(obj, name, data);
@@ -2841,7 +2849,7 @@ static void show_object__ma_allow_promisor(struct object *obj, const char *name,
 	 * Quietly ignore EXPECTED missing objects.  This avoids problems with
 	 * staging them now and getting an odd error later.
 	 */
-	if (!has_object_file(&obj->oid) && is_promisor_object(&obj->oid))
+	if (!repo_has_object_file(the_repository, &obj->oid) && is_promisor_object(&obj->oid))
 		return;
 
 	show_object(obj, name, data);

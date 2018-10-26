@@ -389,7 +389,8 @@ static int show_ambiguous_object(const struct object_id *oid, void *data)
 		if (commit) {
 			struct pretty_print_context pp = {0};
 			pp.date_mode.type = DATE_SHORT;
-			format_commit_message(commit, " %ad - %s", &desc, &pp);
+			repo_format_commit_message(the_repository, commit,
+						   " %ad - %s", &desc, &pp);
 		}
 	} else if (type == OBJ_TAG) {
 		struct tag *tag = lookup_tag(the_repository, oid);
@@ -920,7 +921,7 @@ static int get_parent(const char *name, int len,
 	if (ret)
 		return ret;
 	commit = lookup_commit_reference(the_repository, &oid);
-	if (parse_commit(commit))
+	if (repo_parse_commit(the_repository, commit))
 		return -1;
 	if (!idx) {
 		oidcpy(result, &commit->object.oid);
@@ -952,7 +953,7 @@ static int get_nth_ancestor(const char *name, int len,
 		return -1;
 
 	while (generation--) {
-		if (parse_commit(commit) || !commit->parents)
+		if (repo_parse_commit(the_repository, commit) || !commit->parents)
 			return -1;
 		commit = commit->parents->item;
 	}
@@ -1223,7 +1224,7 @@ static int get_oid_oneline(const char *prefix, struct object_id *oid,
 		buf = get_commit_buffer(commit, NULL);
 		p = strstr(buf, "\n\n");
 		matches = negative ^ (p && !regexec(&regex, p + 2, 0, NULL, 0));
-		unuse_commit_buffer(commit, buf);
+		repo_unuse_commit_buffer(the_repository, commit, buf);
 
 		if (matches) {
 			oidcpy(oid, &commit->object.oid);

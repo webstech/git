@@ -22,7 +22,7 @@ void create_notes_commit(struct notes_tree *t, struct commit_list *parents,
 		if (!read_ref(t->ref, &parent_oid)) {
 			struct commit *parent = lookup_commit(the_repository,
 							      &parent_oid);
-			if (parse_commit(parent))
+			if (repo_parse_commit(the_repository, parent))
 				die("Failed to find/parse commit %s", t->ref);
 			commit_list_insert(parent, &parents);
 		}

@@ -225,7 +225,7 @@ int cache_tree_fully_valid(struct cache_tree *it)
 	int i;
 	if (!it)
 		return 0;
-	if (it->entry_count < 0 || !has_sha1_file(it->oid.hash))
+	if (it->entry_count < 0 || !repo_has_sha1_file(the_repository, it->oid.hash))
 		return 0;
 	for (i = 0; i < it->subtree_nr; i++) {
 		if (!cache_tree_fully_valid(it->down[i]->cache_tree))
@@ -253,7 +253,7 @@ static int update_one(struct cache_tree *it,
 
 	*skip_count = 0;
 
-	if (0 <= it->entry_count && has_sha1_file(it->oid.hash))
+	if (0 <= it->entry_count && repo_has_sha1_file(the_repository, it->oid.hash))
 		return it->entry_count;
 
 	/*
@@ -360,7 +360,7 @@ static int update_one(struct cache_tree *it,
 			(repository_format_partial_clone &&
 			 ce_skip_worktree(ce));
 		if (is_null_oid(oid) ||
-		    (!ce_missing_ok && !has_object_file(oid))) {
+		    (!ce_missing_ok && !repo_has_object_file(the_repository, oid))) {
 			strbuf_release(&buffer);
 			if (expected_missing)
 				return -1;
@@ -407,7 +407,7 @@ static int update_one(struct cache_tree *it,
 	if (repair) {
 		struct object_id oid;
 		hash_object_file(buffer.buf, buffer.len, tree_type, &oid);
-		if (has_object_file(&oid))
+		if (repo_has_object_file(the_repository, &oid))
 			oidcpy(&it->oid, &oid);
 		else
 			to_invalidate = 1;

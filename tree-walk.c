@@ -715,8 +715,10 @@ enum follow_symlinks_result get_tree_entry_follow_symlinks(struct object_id *tre
 			 */
 			retval = DANGLING_SYMLINK;
 
-			contents = read_object_file(&current_tree_oid, &type,
-						    &link_len);
+			contents = repo_read_object_file(the_repository,
+							 &current_tree_oid,
+							 &type,
+							 &link_len);
 
 			if (!contents)
 				goto done;

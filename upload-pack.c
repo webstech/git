@@ -314,7 +314,7 @@ static int got_oid(const char *hex, struct object_id *oid,
 
 	if (get_oid_hex(hex, oid))
 		die("git upload-pack: expected SHA1 object, got '%s'", hex);
-	if (!has_object_file(oid))
+	if (!repo_has_object_file(the_repository, oid))
 		return -1;
 
 	o = parse_object(the_repository, oid);
@@ -1284,7 +1284,7 @@ static int process_haves(struct oid_array *haves, struct oid_array *common,
 		struct object *o;
 		int we_knew_they_have = 0;
 
-		if (!has_object_file(oid))
+		if (!repo_has_object_file(the_repository, oid))
 			continue;
 
 		oid_array_append(common, oid);

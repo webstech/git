@@ -617,7 +617,7 @@ static void write_followtags(const struct ref *refs, const char *msg)
 			continue;
 		if (ends_with(ref->name, "^{}"))
 			continue;
-		if (!has_object_file(&ref->old_oid))
+		if (!repo_has_object_file(the_repository, &ref->old_oid))
 			continue;
 		update_ref(msg, ref->name, &ref->old_oid, NULL, 0,
 			   UPDATE_REFS_DIE_ON_ERR);

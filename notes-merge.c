@@ -325,7 +325,7 @@ static void write_note_to_worktree(const struct object_id *obj,
 {
 	enum object_type type;
 	unsigned long size;
-	void *buf = read_object_file(note, &type, &size);
+	void *buf = repo_read_object_file(the_repository, note, &type, &size);
 
 	if (!buf)
 		die("cannot read note %s for object %s",
@@ -724,7 +724,7 @@ int notes_merge_commit(struct notes_merge_options *o,
 
 	create_notes_commit(partial_tree, partial_commit->parents, msg,
 			    strlen(msg), result_oid);
-	unuse_commit_buffer(partial_commit, buffer);
+	repo_unuse_commit_buffer(the_repository, partial_commit, buffer);
 	if (o->verbosity >= 4)
 		printf("Finalized notes merge commit: %s\n",
 			oid_to_hex(result_oid));

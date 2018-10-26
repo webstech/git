@@ -170,12 +170,13 @@ void shortlog_add_commit(struct shortlog *log, struct commit *commit)
 		(log->email ? "%cN <%cE>" : "%cN") :
 		(log->email ? "%aN <%aE>" : "%aN");
 
-	format_commit_message(commit, fmt, &author, &ctx);
+	repo_format_commit_message(the_repository, commit, fmt, &author, &ctx);
 	if (!log->summary) {
 		if (log->user_format)
 			pretty_print_commit(&ctx, commit, &oneline);
 		else
-			format_commit_message(commit, "%s", &oneline, &ctx);
+			repo_format_commit_message(the_repository, commit,
+						   "%s", &oneline, &ctx);
 	}
 
 	insert_one_record(log, author.buf, oneline.len ? oneline.buf : "<none>");

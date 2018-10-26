@@ -61,7 +61,8 @@ static void format_subst(const struct commit *commit,
 		strbuf_add(&fmt, b + 8, c - b - 8);
 
 		strbuf_add(buf, src, b - src);
-		format_commit_message(commit, fmt.buf, buf, &ctx);
+		repo_format_commit_message(the_repository, commit, fmt.buf,
+					   buf, &ctx);
 		len -= c + 1 - src;
 		src  = c + 1;
 	}
@@ -79,7 +80,7 @@ void *object_file_to_archive(const struct archiver_args *args,
 	const struct commit *commit = args->convert ? args->commit : NULL;
 
 	path += args->baselen;
-	buffer = read_object_file(oid, type, sizep);
+	buffer = repo_read_object_file(the_repository, oid, type, sizep);
 	if (buffer && S_ISREG(mode)) {
 		struct strbuf buf = STRBUF_INIT;
 		size_t size = 0;

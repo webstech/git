@@ -683,8 +683,9 @@ static int prepare_to_commit(const char *index_file, const char *prefix,
 			if (!c)
 				die(_("could not lookup commit %s"), squash_message);
 			ctx.output_encoding = get_commit_output_encoding();
-			format_commit_message(c, "squash! %s\n\n", &sb,
-					      &ctx);
+			repo_format_commit_message(the_repository, c,
+						   "squash! %s\n\n", &sb,
+						   &ctx);
 		}
 	}
 
@@ -716,8 +717,9 @@ static int prepare_to_commit(const char *index_file, const char *prefix,
 		if (!commit)
 			die(_("could not lookup commit %s"), fixup_message);
 		ctx.output_encoding = get_commit_output_encoding();
-		format_commit_message(commit, "fixup! %s\n\n",
-				      &sb, &ctx);
+		repo_format_commit_message(the_repository, commit,
+					   "fixup! %s\n\n",
+					   &sb, &ctx);
 		if (have_option_m)
 			strbuf_addbuf(&sb, &message);
 		hook_arg1 = "message";
@@ -1001,7 +1003,8 @@ static const char *find_author_by_nickname(const char *name)
 		struct pretty_print_context ctx = {0};
 		ctx.date_mode.type = DATE_NORMAL;
 		strbuf_release(&buf);
-		format_commit_message(commit, "%aN <%aE>", &buf, &ctx);
+		repo_format_commit_message(the_repository, commit,
+					   "%aN <%aE>", &buf, &ctx);
 		clear_mailmap(&mailmap);
 		return strbuf_detach(&buf, NULL);
 	}

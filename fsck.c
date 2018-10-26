@@ -443,7 +443,7 @@ static int fsck_walk_commit(struct commit *commit, void *data, struct fsck_optio
 	int result;
 	const char *name;
 
-	if (parse_commit(commit))
+	if (repo_parse_commit(the_repository, commit))
 		return -1;
 
 	name = get_object_name(options, &commit->object);
@@ -855,7 +855,7 @@ static int fsck_commit(struct commit *commit, const char *data,
 	const char *buffer = data ?  data : get_commit_buffer(commit, &size);
 	int ret = fsck_commit_buffer(commit, buffer, size, options);
 	if (!data)
-		unuse_commit_buffer(commit, buffer);
+		repo_unuse_commit_buffer(the_repository, commit, buffer);
 	return ret;
 }
 
@@ -875,7 +875,8 @@ static int fsck_tag_buffer(struct tag *tag, const char *data,
 		enum object_type type;
 
 		buffer = to_free =
-			read_object_file(&tag->object.oid, &type, &size);
+			repo_read_object_file(the_repository,
+					      &tag->object.oid, &type, &size);
 		if (!buffer)
 			return report(options, &tag->object,
 				FSCK_MSG_MISSING_TAG_OBJECT,
@@ -1099,7 +1100,7 @@ int fsck_finish(struct fsck_options *options)
 			continue;
 		}
 
-		buf = read_object_file(oid, &type, &size);
+		buf = repo_read_object_file(the_repository, oid, &type, &size);
 		if (!buf) {
 			if (is_promisor_object(&blob->object.oid))
 				continue;

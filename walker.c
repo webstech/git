@@ -78,7 +78,7 @@ static int process_commit(struct walker *walker, struct commit *commit)
 {
 	struct commit_list *parents;
 
-	if (parse_commit(commit))
+	if (repo_parse_commit(the_repository, commit))
 		return -1;
 
 	while (complete && complete->item->date >= commit->date) {
@@ -144,7 +144,7 @@ static int process(struct walker *walker, struct object *obj)
 		return 0;
 	obj->flags |= SEEN;
 
-	if (has_object_file(&obj->oid)) {
+	if (repo_has_object_file(the_repository, &obj->oid)) {
 		/* We already have it, so we should scan it now. */
 		obj->flags |= TO_SCAN;
 	}
