@@ -600,4 +600,59 @@ test_expect_success "fetch new commits when submodule got renamed" '
 	test_cmp expect actual
 '
 
+test_expect_success "fetch new submodule commits on-demand outside standard refspec" '
+	# add a second submodule and ensure it is around in downstream first
+	git clone submodule sub1 &&
+	git submodule add ./sub1 &&
+	git commit -m "adding a second submodule" &&
+	git -C downstream pull &&
+	git -C downstream submodule update --init --recursive &&
+
+	git checkout --detach &&
+
+	C=$(git -C submodule commit-tree -m "new change outside refs/heads" HEAD^{tree}) &&
+	git -C submodule update-ref refs/changes/1 $C &&
+	git update-index --cacheinfo 160000 $C submodule &&
+	test_tick &&
+
+	D=$(git -C sub1 commit-tree -m "new change outside refs/heads" HEAD^{tree}) &&
+	git -C sub1 update-ref refs/changes/2 $D &&
+	git update-index --cacheinfo 160000 $D sub1 &&
+
+	git commit -m "updated submodules outside of refs/heads" &&
+	E=$(git rev-parse HEAD) &&
+	git update-ref refs/changes/2 $E &&
+	(
+		cd downstream &&
+		git fetch --recurse-submodules origin refs/changes/2:refs/heads/my_branch &&
+		git -C submodule cat-file -t $C &&
+		git -C sub1 cat-file -t $D &&
+		git checkout --recurse-submodules FETCH_HEAD
+	)
+'
+
+test_expect_success 'fetch new submodule commits on-demand in FETCH_HEAD' '
+	# depends on the previous test for setup
+
+	C=$(git -C submodule commit-tree -m "another change outside refs/heads" HEAD^{tree}) &&
+	git -C submodule update-ref refs/changes/1 $C &&
+	git update-index --cacheinfo 160000 $C submodule &&
+	test_tick &&
+
+	D=$(git -C sub1 commit-tree -m "another change outside refs/heads" HEAD^{tree}) &&
+	git -C sub1 update-ref refs/changes/2 $D &&
+	git update-index --cacheinfo 160000 $D sub1 &&
+
+	git commit -m "updated submodules outside of refs/heads" &&
+	E=$(git rev-parse HEAD) &&
+	git update-ref refs/changes/2 $E &&
+	(
+		cd downstream &&
+		git fetch --recurse-submodules origin refs/changes/2 &&
+		git -C submodule cat-file -t $C &&
+		git -C sub1 cat-file -t $D &&
+		git checkout --recurse-submodules FETCH_HEAD
+	)
+'
+
 test_done
