@@ -1458,6 +1458,7 @@ extern struct object *peel_to_type(const char *name, int namelen,
 
 enum date_mode_type {
 	DATE_NORMAL = 0,
+	DATE_HUMAN,
 	DATE_RELATIVE,
 	DATE_SHORT,
 	DATE_ISO8601,
