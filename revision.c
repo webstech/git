@@ -1181,7 +1181,7 @@ struct all_refs_cb {
 	int warned_bad_reflog;
 	struct rev_info *all_revs;
 	const char *name_for_errormsg;
-	struct ref_store *refs;
+	struct worktree *wt;
 };
 
 int ref_excluded(struct string_list *ref_excludes, const char *path)
@@ -1218,7 +1218,7 @@ static void init_all_refs_cb(struct all_refs_cb *cb, struct rev_info *revs,
 	cb->all_revs = revs;
 	cb->all_flags = flags;
 	revs->rev_input_given = 1;
-	cb->refs = NULL;
+	cb->wt = NULL;
 }
 
 void clear_ref_exclusion(struct string_list **ref_excludes_p)
@@ -1281,14 +1281,20 @@ static int handle_one_reflog_ent(struct object_id *ooid, struct object_id *noid,
 	return 0;
 }
 
-static int handle_one_reflog(const char *path, const struct object_id *oid,
+static int handle_one_reflog(const char *refname_in_wt,
+			     const struct object_id *oid,
 			     int flag, void *cb_data)
 {
 	struct all_refs_cb *cb = cb_data;
+	struct strbuf refname = STRBUF_INIT;
+
 	cb->warned_bad_reflog = 0;
-	cb->name_for_errormsg = path;
-	refs_for_each_reflog_ent(cb->refs, path,
+	strbuf_worktree_ref(cb->wt, &refname, refname_in_wt);
+	cb->name_for_errormsg = refname.buf;
+	refs_for_each_reflog_ent(get_main_ref_store(the_repository),
+				 refname.buf,
 				 handle_one_reflog_ent, cb_data);
+	strbuf_release(&refname);
 	return 0;
 }
 
@@ -1303,8 +1309,8 @@ static void add_other_reflogs_to_pending(struct all_refs_cb *cb)
 		if (wt->is_current)
 			continue;
 
-		cb->refs = get_worktree_ref_store(wt);
-		refs_for_each_reflog(cb->refs,
+		cb->wt = wt;
+		refs_for_each_reflog(get_worktree_ref_store(wt),
 				     handle_one_reflog,
 				     cb);
 	}
@@ -1317,7 +1323,7 @@ void add_reflogs_to_pending(struct rev_info *revs, unsigned flags)
 
 	cb.all_revs = revs;
 	cb.all_flags = flags;
-	cb.refs = get_main_ref_store(revs->repo);
+	cb.wt = NULL;
 	for_each_reflog(handle_one_reflog, &cb);
 
 	if (!revs->single_worktree)
