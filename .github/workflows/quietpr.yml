@@ -1,0 +1,91 @@
+# Run weekly to label stale pull requests
+
+name: stale prs
+
+on:
+  push:
+    # branches: [ wftest ]
+    # branches-ignore: [ master, main ]
+
+jobs:
+  check-PRs:
+    name: Flag quiet PRs
+    runs-on: ubuntu-latest
+
+    # job level env vars used for a couple of steps
+    # env:
+      # see github-glue.test.ts for info on setting these
+      # GGG_TOKEN: ${{ secrets.GGG_TOKEN }}
+      # GGG_REPOSITORY: ${{ secrets.GGG_REPOSITORY }}
+
+    steps:
+    - uses: actions/setup-node@v1
+
+    - name: Flag stale PRs
+      uses: actions/github-script@v3
+      with:
+        # github-token: ${{secrets.GGG_TOKEN}}
+        # github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const variables = {
+            owner: "git", // context.repo.owner,
+            name: context.repo.repo
+          }
+
+          const expires = new Date();
+          expires.setUTCHours(0 - (14*24), 0 ,0);
+          const expired = expires.getTime();
+          const query = `query($owner:String!, $name:String!) {
+            repository(owner:$owner, name:$name){
+              pullRequests(states: [OPEN], last: 80) {
+                totalCount,
+                nodes {
+                  updatedAt,
+                  number
+                  labels(first:20) {
+                    nodes {
+                      name
+                    }
+                  }
+                }
+              }
+            }
+          }`;
+
+          const result = await github.graphql(query, variables);
+          console.log(result.repository.pullRequests.nodes);
+          const labels = ["quiet", "next", "seen", "master"];
+          result.repository.pullRequests.nodes.map(pr => {
+              console.log(`Checking PR ${pr.number
+              } ${pr.updatedAt} ${expires}`);
+              try {
+                pr.labels.nodes.map(label => {
+                  if (labels.includes(label.name)) {
+                    throw new Error("matched");
+                  }
+                });
+                const prUpdated = new Date(pr.updatedAt);
+                if (prUpdated.getTime() < expired) {
+                  /*
+                  await github.issues.addLabels({
+                    issue_number: pr.number,
+                    [labels[0]],
+                    variables.owner,
+                    variables.name,
+                  });
+                  await this.client.issues.createComment({
+                    body: comment,
+                    issue_number: pr.number,
+                    variables.owner,
+                    variables.name,
+                  });
+                  */
+                  console.log(`${pr.number} labeled`);
+                }
+              } catch(e) {
+                // nothing to do here
+                console.log(e.message);
+                console.log(pr);
+              }
+          });
+      # if: env.GGG_TOKEN # || env.GGG_REPOSITORY
